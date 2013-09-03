@@ -94,7 +94,8 @@ int main(void) {
 	printf("server: waiting for connections...\n");
 
 	int connect = 1;
-	int status = 1;
+	char msg[1024];
+	int numbytes;
 
 	while (connect) {	// main accept() loop
 		sin_size = sizeof their_addr;
@@ -109,22 +110,21 @@ int main(void) {
 			s, sizeof s);
 		printf("server: got connection from %s\n", s);
 
-		connect = 0;
-	}
-
-	char msg[1024];
-	int numbytes;
-
-	while (status) {
-		scanf("%s", msg);
-		if (strcmp(msg, "") > 0) {
-			numbytes = send(new_fd, msg, strlen(msg), 0);
-		}
-
-		if (strcmp(msg, "exit") == 0) {
+		if (fork() == 0) {
 			close(sock_fd);
-			close(new_fd);
-			status = 0;
+			while (1) {
+				scanf("%s", msg);
+				if (strcmp(msg, "") > 0) {
+					numbytes = send(new_fd, msg, strlen(msg), 0);
+				}
+
+				if (strcmp(msg, "exit") == 0) {
+					close(new_fd);
+					exit(0);
+				}
+			}
+		} else {
+			wait(&connect);
 		}
 	}
 

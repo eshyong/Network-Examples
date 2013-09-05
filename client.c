@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #define BUFFER_SIZE 256
-#define PORT 80
+#define PORT 8000
 // 127.0.0.1
 #define LOCAL_HOST 2130706433
 
@@ -18,7 +18,7 @@ int main() {
 	struct sockaddr_in sa;
 
 	// buffer to hold messages
-	char buffer[BUFFER_SIZE + 1];
+	char buffer[BUFFER_SIZE];
 
 	// create a socket
 	if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
@@ -43,13 +43,26 @@ int main() {
 
 	// loop to send messages in
 	while (1) {
-		scanf("%s", buffer);
+		// get user input
+		fgets(buffer, BUFFER_SIZE, stdin);
 
-		if ((bytes = send(sock, buffer, strlen(buffer), 0)) <= 0) {
+		// remove newline character
+		for (int i = 0; i < BUFFER_SIZE; i++) {
+			if (buffer[i] == '\n') {
+				buffer[i] = '\0';
+				break;
+			}
+		}
+
+		// print out error if any
+		if ((bytes = send(sock, buffer, strlen(buffer), 0)) < 0) {
 			perror("send");
 		}
+
+		// print length of message
 		printf("bytes sent: %d\n", bytes);
 
+		// exit message
 		if (strcmp(buffer, "exit") == 0) {
 			printf("exiting...\n");
 			break;

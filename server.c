@@ -13,23 +13,30 @@
 
 #define BACKLOG 10
 #define MESSAGE_SIZE 256
-#define PORT 80
+#define PORT 8000
 // 127.0.0.1
 #define LOCAL_HOST 2130706433 
 
 void reap(void) {
-	while (waitpid(-1, NULL, WNOHANG) > 0);
+	pid_t pid;
+	int status;
+	while ((pid = waitpid(-1, &status, WNOHANG)) > 0);
+
+	// check if child process has exited
+	if (WIFEXITED(status)) {
+		printf("child %u exited normally\n", pid);
+	}
 }
 
 int main() {
 	// socket variables
-	int ssock, csock;
+	int ssock, csock[BACKLOG];
 	socklen_t sock_addrlen;
 	struct sockaddr_in sa;
 
 	// used when forking
-	int pid;
-	int status;
+	int pid, status;
+	int num_clients = 0;
 
 	// message and its size
 	int bytes;
@@ -61,17 +68,24 @@ int main() {
 	// set socket to listen
 	listen(ssock, BACKLOG);
 
+	// address length, passed by reference
+	sock_addrlen = sizeof(sa);
+
 	while (1) {
-		// address length, passed by reference
-		sock_addrlen = sizeof(sa);
+		// don't accept new clients if limit is reached
+		if (num_clients == BACKLOG) {
+			continue;
+		}
 
 		// wait for clients to connect
-		if ((csock = accept(ssock, (struct sockaddr *)&sa, &sock_addrlen)) < 0) {
+		if ((csock[num_clients] = accept(ssock, (struct sockaddr *)&sa, &sock_addrlen)) < 0) {
 			perror("server: accept");
 			return 3;
 		}
 
+		// client accepted
 		printf("connection accepted from %s\n", inet_ntoa(sa.sin_addr));
+		num_clients++;
 
 		// fork a child
 		switch (pid = fork()) {
@@ -93,17 +107,18 @@ int main() {
 					memset(msg, 0, sizeof(msg) / sizeof(char));
 
 					// recv call
-					bytes = recv(csock, msg, MESSAGE_SIZE, 0);
+					bytes = recv(csock[num_clients - 1], msg, MESSAGE_SIZE, 0);
 
 					// print received messages
 					if (strcmp(msg, "") > 0) {
-						printf("received message: %s\nlength: %d\n", msg, bytes);
+						printf("received message from client %d: %s\nlength: %d\n", 
+							num_clients, msg, bytes);
 					}
 
 					// exit if client disconnects
 					if (strcmp(msg, "exit") == 0) {
-						printf("client exiting...\n");
-						exit(0);
+						printf("client %d has disconnected\n", num_clients);
+						return 0;
 					}
 
 					// print error, if any
@@ -116,20 +131,17 @@ int main() {
 			}
 			// parent process
 			default: {
-				// wait for child process to end
-				wait(&status);
-				printf("exiting with status %d\n", status);
-
-				// close sockets and exit
-				close(ssock);
-				close(csock);
-				exit(status);
+				continue;
 			}
 		}
-
 		break;
 	}
 
+	// close all sockets
+	close(ssock);
+	for (int i = 0; i < num_clients; i++) {
+		close(csock[i]);
+	}
 
 	return 0;
 }

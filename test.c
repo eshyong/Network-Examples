@@ -8,12 +8,7 @@
 #include <unistd.h>
 
 int main() {
-	struct sockaddr_in sa;
-	char ip[INET_ADDRSTRLEN];
-	sa.sin_addr.s_addr = htonl(2130706433);
-	inet_ntop(AF_INET, &(sa.sin_addr), ip, INET_ADDRSTRLEN);
-
-	printf("%s\n", ip);
+	printf("%lu\n", sizeof(int));
 
 	return 0;
 }

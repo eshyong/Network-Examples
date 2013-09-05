@@ -1,1 +1,1 @@
-Repository following "Beej's Guide to Network Programming."
+Coding exercises to learn networking principles.

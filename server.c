@@ -11,11 +11,13 @@
 #include <sys/wait.h>
 #include <netinet/in.h>
 
-#define BACKLOG 10
+#define BACKLOG 3
 #define MESSAGE_SIZE 256
 #define PORT 8000
 // 127.0.0.1
 #define LOCAL_HOST 2130706433 
+
+static int num_clients = 0;
 
 void reap(void) {
 	pid_t pid;
@@ -26,6 +28,7 @@ void reap(void) {
 	if (WIFEXITED(status)) {
 		printf("child %u exited normally\n", pid);
 	}
+	num_clients--;
 }
 
 int main() {
@@ -36,7 +39,6 @@ int main() {
 
 	// used when forking
 	int pid, status;
-	int num_clients = 0;
 
 	// message and its size
 	int bytes;
@@ -55,6 +57,7 @@ int main() {
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORT);
+	printf("using port %d\n", sa.sin_port);
 	sa.sin_addr.s_addr = htonl(LOCAL_HOST);
 
 	// bind socket to address
@@ -84,7 +87,7 @@ int main() {
 		}
 
 		// client accepted
-		printf("connection accepted from %s\n", inet_ntoa(sa.sin_addr));
+		printf("connection accepted from %s, port %d\n", inet_ntoa(sa.sin_addr), htons(sa.sin_port));
 		num_clients++;
 
 		// fork a child

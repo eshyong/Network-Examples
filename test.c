@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 int main() {
-	printf("%lu\n", sizeof(int));
+	printf("%lu\n", sizeof(pid_t));
 
 	return 0;
 }

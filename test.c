@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
 
 int main() {
-	printf("%lu\n", sizeof(pid_t));
+	int i;
+	char usernames[10][256];
+
+	strcpy(usernames[0], "hello\n");
+	 
 
 	return 0;
 }
